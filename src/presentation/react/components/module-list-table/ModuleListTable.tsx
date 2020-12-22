@@ -32,6 +32,7 @@ import { ModulePackageListPageProps } from "../../../webapp/pages/module-package
 import { useAppContext } from "../../contexts/AppContext";
 import { NewPackageDialog } from "./NewPackageDialog";
 import { getValidationsByVersionFeedback } from "./utils";
+import { generateUid } from "d2/uid";
 
 export const ModulesListTable: React.FC<ModulePackageListPageProps> = ({
     remoteInstance,
@@ -117,7 +118,7 @@ export const ModulesListTable: React.FC<ModulePackageListPageProps> = ({
 
                         const validations = await compositionRoot.packages.create(
                             remoteInstance?.id ?? "LOCAL",
-                            item,
+                            item.update({ id: generateUid() }),
                             module,
                             dhisVersion
                         );
@@ -430,7 +431,7 @@ export const ModulesListTable: React.FC<ModulePackageListPageProps> = ({
             .value();
     }, [rows]);
 
-    const filterComponents = React.useMemo(() => {
+    const filterComponents = useMemo(() => {
         const departmentFilterComponent = (
             <Dropdown
                 key="filter-department"

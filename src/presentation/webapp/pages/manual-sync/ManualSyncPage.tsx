@@ -39,6 +39,7 @@ import SyncDialog from "../../../react/components/sync-dialog/SyncDialog";
 import SyncSummary from "../../../react/components/sync-summary/SyncSummary";
 import { TestWrapper } from "../../../react/components/test-wrapper/TestWrapper";
 import InstancesSelectors from "./InstancesSelectors";
+import { Store } from "../../../../domain/packages/entities/Store";
 
 const config: Record<
     SynchronizationType,
@@ -117,11 +118,13 @@ const ManualSyncPage: React.FC = () => {
 
     const updateSelection = useCallback(
         (selection: string[], exclusion: string[]) => {
-            const syncRule = SyncRule.createOnDemand(type)
-                .updateMetadataIds(selection)
-                .updateExcludedIds(exclusion);
-
-            updateSyncRule(syncRule);
+            updateSyncRule(({ originInstance, targetInstances }) =>
+                SyncRule.createOnDemand(type)
+                    .updateBuilder({ originInstance })
+                    .updateTargetInstances(targetInstances)
+                    .updateMetadataIds(selection)
+                    .updateExcludedIds(exclusion)
+            );
         },
         [type]
     );
@@ -229,17 +232,17 @@ const ManualSyncPage: React.FC = () => {
             text: i18n.t("Metadata type"),
             hidden: config[type].childrenKeys === undefined,
             getValue: (row: MetadataType) => {
-                return row.model.getModelName(api);
+                return row.model.getModelName();
             },
         },
     ];
 
     const updateSourceInstance = useCallback(
-        (_type: InstanceSelectionOption, instance?: Instance) => {
+        (_type: InstanceSelectionOption, instance?: Instance | Store) => {
             const originInstance = instance?.id ?? "LOCAL";
             const targetInstances = originInstance === "LOCAL" ? [] : ["LOCAL"];
 
-            setSourceInstance(instance);
+            setSourceInstance(instance ? (instance as Instance) : undefined);
             updateSyncRule(
                 syncRule
                     .updateBuilder({ originInstance })
@@ -280,7 +283,7 @@ const ManualSyncPage: React.FC = () => {
                     childrenKeys={config[type].childrenKeys}
                     showIndeterminateSelection={true}
                     additionalColumns={additionalColumns}
-                    allowChangingResponsible={type === "metadata"}
+                    allowChangingResponsible={type === "metadata" && appConfigurator}
                 />
             )}
 

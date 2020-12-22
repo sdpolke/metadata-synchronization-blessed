@@ -2,6 +2,9 @@ import {
     dataElementGroupFields,
     dataElementGroupSetFields,
     dataSetFields,
+    documentColumns,
+    documentDetails,
+    documentFields,
     organisationUnitFields,
     organisationUnitsColumns,
     organisationUnitsDetails,
@@ -257,6 +260,18 @@ export class DataSetModel extends D2Model {
     ];
 }
 
+export class DocumentsModel extends D2Model {
+    protected static metadataType = "document";
+    protected static collectionName = "documents" as const;
+
+    protected static columns = documentColumns;
+    protected static details = documentDetails;
+    protected static fields = documentFields;
+
+    protected static excludeRules = [];
+    protected static includeRules = [];
+}
+
 export class EventChartModel extends D2Model {
     protected static metadataType = "eventChart";
     protected static collectionName = "eventCharts" as const;
@@ -355,7 +370,7 @@ export class OptionSetModel extends D2Model {
     protected static metadataType = "optionSet";
     protected static collectionName = "optionSets" as const;
 
-    protected static excludeRules = [""];
+    protected static excludeRules = [];
     protected static includeRules = ["attributes", "options", "options.attributes"];
 }
 
@@ -363,7 +378,7 @@ export class OptionModel extends D2Model {
     protected static metadataType = "option";
     protected static collectionName = "options" as const;
 
-    protected static excludeRules = ["optionSets.options"];
+    protected static excludeRules = [];
     protected static includeRules = ["attributes", "optionSets", "optionSets.attributes"];
 }
 

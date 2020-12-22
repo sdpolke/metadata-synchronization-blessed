@@ -1,6 +1,6 @@
 import { useLoading, useSnackbar } from "d2-ui-components";
 import _ from "lodash";
-import React from "react";
+import { useCallback, useState } from "react";
 import { Instance } from "../../../../domain/instance/entities/Instance";
 import {
     FieldUpdate,
@@ -9,25 +9,45 @@ import {
 import i18n from "../../../../locales";
 import SyncReport from "../../../../models/syncReport";
 import { useAppContext } from "../../contexts/AppContext";
+import { PackageToDiff } from "./PackagesDiffDialog";
 
-export function getChange(u: FieldUpdate): string {
-    return `${u.field}: ${truncate(u.oldValue)} -> ${truncate(u.newValue)}`;
+export function getChange(fieldUpdate: FieldUpdate): string {
+    const { field, oldValue, newValue } = fieldUpdate;
+    const has = (s: string) => !!s;
+
+    if (has(oldValue) && has(newValue)) {
+        return `${field}: ${truncate(oldValue)} -> ${truncate(newValue)}`;
+    } else if (has(newValue)) {
+        return `${field} [new]: ${truncate(newValue)}`;
+    } else if (has(oldValue)) {
+        return `${field} [removed]: ${truncate(oldValue)}`;
+    } else {
+        return `${field}: no values`;
+    }
 }
 
 function truncate(s: string) {
     return _.truncate(s, { length: 50 });
 }
 
-export function getTitle(packageName: string, metadataDiff: MetadataPackageDiff | undefined) {
+export function getTitle(
+    packageBase: PackageToDiff | undefined,
+    packageMerge: PackageToDiff | undefined,
+    metadataDiff: MetadataPackageDiff | undefined
+) {
     let prefix: string;
     if (!metadataDiff) {
         prefix = i18n.t("Comparing package contents");
     } else if (metadataDiff.hasChanges) {
-        prefix = i18n.t("Changes found in remote package");
+        prefix = i18n.t("Changes found");
     } else {
-        prefix = i18n.t("No changes found in remote package");
+        prefix = i18n.t("No changes found");
     }
-    return `${prefix}: ${packageName}`;
+    const info = [packageBase, packageMerge]
+        .map(package_ => (package_ ? `${package_.name} (${package_.version})` : i18n.t("Local")))
+        .join(" - > ");
+
+    return `${prefix}: ${info}`;
 }
 
 export function usePackageImporter(
@@ -39,15 +59,15 @@ export function usePackageImporter(
     const { compositionRoot, api } = useAppContext();
     const loading = useLoading();
     const snackbar = useSnackbar();
-    const [syncReport, setSyncReport] = React.useState<SyncReport>();
+    const [syncReport, setSyncReport] = useState<SyncReport>();
 
-    const closeSyncReport = React.useCallback(() => {
+    const closeSyncReport = useCallback(() => {
         setSyncReport(undefined);
         onClose();
     }, [setSyncReport, onClose]);
 
-    const importPackage = React.useCallback(() => {
-        async function import_() {
+    const importPackage = useCallback(() => {
+        async function performImport() {
             if (!metadataDiff) return;
             loading.show(true, i18n.t("Importing package {{name}}", { name: packageName }));
 
@@ -62,7 +82,7 @@ export function usePackageImporter(
             setSyncReport(report);
         }
 
-        import_()
+        performImport()
             .catch(err => snackbar.error(err.message))
             .finally(() => loading.reset());
     }, [packageName, metadataDiff, compositionRoot, loading, snackbar, api, instance]);

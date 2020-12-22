@@ -1,4 +1,3 @@
-import { generateUid } from "d2/uid";
 import { metadataTransformations } from "../../../data/transformations/PackageTransformations";
 import { CompositionRoot } from "../../../presentation/CompositionRoot";
 import { cache } from "../../../utils/cache";
@@ -8,6 +7,7 @@ import { ValidationError } from "../../common/entities/Validations";
 import { RepositoryFactory } from "../../common/factories/RepositoryFactory";
 import { Instance } from "../../instance/entities/Instance";
 import { InstanceRepositoryConstructor } from "../../instance/repositories/InstanceRepository";
+import { MetadataPackage } from "../../metadata/entities/MetadataEntities";
 import { Module } from "../../modules/entities/Module";
 import { Repositories } from "../../Repositories";
 import { Namespace } from "../../storage/Namespaces";
@@ -26,16 +26,19 @@ export class CreatePackageUseCase implements UseCase {
         originInstance: string,
         sourcePackage: Package,
         module: Module,
-        dhisVersion: string
+        dhisVersion: string,
+        contents?: MetadataPackage
     ): Promise<ValidationError[]> {
         const apiVersion = getMajorVersion(dhisVersion);
         const transformationRepository = this.getTransformationRepository();
 
-        const basePayload = await this.compositionRoot.sync[module.type]({
-            ...module.toSyncBuilder(),
-            originInstance,
-            targetInstances: [],
-        }).buildPayload();
+        const basePayload = contents
+            ? contents
+            : await this.compositionRoot.sync[module.type]({
+                  ...module.toSyncBuilder(),
+                  originInstance,
+                  targetInstances: [],
+              }).buildPayload();
 
         const versionedPayload = transformationRepository.mapPackageTo(
             apiVersion,
@@ -60,7 +63,6 @@ export class CreatePackageUseCase implements UseCase {
         if (validations.length === 0) {
             const user = await instanceRepository.getUser();
             const newPackage = payload.update({
-                id: generateUid(),
                 lastUpdated: new Date(),
                 lastUpdatedBy: user,
                 user: payload.user.id ? payload.user : user,

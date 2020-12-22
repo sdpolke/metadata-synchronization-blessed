@@ -5,6 +5,7 @@ import { D2Api } from "d2-api/2.30";
 import _ from "lodash";
 import React from "react";
 import ReactDOM from "react-dom";
+import { PresentationLoader } from "./presentation/PresentationLoader";
 
 async function getBaseUrl() {
     if (process.env.NODE_ENV === "development") {
@@ -14,17 +15,6 @@ async function getBaseUrl() {
     } else {
         const { data: manifest } = await axios.get("manifest.webapp");
         return manifest.activities.dhis.href;
-    }
-}
-
-// Presentation layer is loaded with code-splitting for performance
-async function getPresentation() {
-    if (process.env.REACT_APP_DASHBOARD_WIDGET) {
-        const { default: App } = await import("./presentation/widget/WidgetApp");
-        return App;
-    } else {
-        const { default: App } = await import("./presentation/webapp/WebApp");
-        return App;
     }
 }
 
@@ -43,7 +33,7 @@ async function main() {
     const baseUrl = await getBaseUrl();
 
     try {
-        const api = new D2Api({ baseUrl });
+        const api = new D2Api({ baseUrl, backend: "fetch" });
         const userSettings = await api.get("/userSettings").getData();
         if (typeof userSettings === "string") throw new Error("User needs to log in");
         configI18n(userSettings);
@@ -63,10 +53,9 @@ async function main() {
     }
 
     try {
-        const App = await getPresentation();
         ReactDOM.render(
             <Provider config={{ baseUrl, apiVersion: "30" }}>
-                <App />
+                <PresentationLoader />
             </Provider>,
             document.getElementById("root")
         );

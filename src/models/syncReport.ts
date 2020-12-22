@@ -43,16 +43,22 @@ export default class SyncReport {
                 "deletedSyncRuleLabel",
                 "type",
                 "dataStats",
+                "packageImport",
             ]),
         };
     }
 
-    public static create(type: SynchronizationType = "metadata"): SyncReport {
+    public static create(
+        type: SynchronizationType = "metadata",
+        user = "",
+        packageImport?: boolean
+    ): SyncReport {
         return new SyncReport({
-            user: "",
+            user,
             status: "READY" as SynchronizationReportStatus,
             types: [],
             type,
+            packageImport,
         });
     }
 
@@ -112,11 +118,15 @@ export default class SyncReport {
         this.syncReport.status = status;
     }
 
+    public setTypes(types: string[]): void {
+        this.syncReport.types = types;
+    }
+
     public addSyncResult(...result: SynchronizationResult[]): void {
         this.results = _.unionBy(
             [...result],
             this.results,
-            ({ instance, type }) => `${instance.id}-${type}`
+            ({ instance, type, originPackage }) => `${instance.id}-${type}-${originPackage?.id}`
         );
     }
 
