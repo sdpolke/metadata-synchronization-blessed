@@ -1,11 +1,10 @@
-import { DataImportParams } from "../../../types/d2";
 import { Instance } from "../../instance/entities/Instance";
 import { MetadataMappingDictionary } from "../../mapping/entities/MetadataMapping";
 import { CategoryOptionCombo } from "../../metadata/entities/MetadataEntities";
-import { SynchronizationResult } from "../../synchronization/entities/SynchronizationResult";
+import { SynchronizationResult } from "../../reports/entities/SynchronizationResult";
 import { AggregatedPackage } from "../entities/AggregatedPackage";
+import { DataImportParams, DataSynchronizationParams } from "../entities/DataSynchronizationParams";
 import { MappedCategoryOption } from "../entities/MappedCategoryOption";
-import { DataSynchronizationParams } from "../types";
 
 export interface AggregatedRepositoryConstructor {
     new (instance: Instance): AggregatedRepository;
@@ -32,8 +31,7 @@ export interface AggregatedRepository {
 
     getDimensions(): Promise<string[]>;
 
-    save(
-        data: object,
-        additionalParams: DataImportParams | undefined
-    ): Promise<SynchronizationResult>;
+    save(data: AggregatedPackage, additionalParams?: DataImportParams): Promise<SynchronizationResult>;
+
+    delete(data: AggregatedPackage): Promise<SynchronizationResult>;
 }

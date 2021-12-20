@@ -1,31 +1,24 @@
 import _ from "lodash";
-import { cache } from "../../../utils/cache";
+import { Namespace } from "../../../data/storage/Namespaces";
 import { Either } from "../../common/entities/Either";
 import { UseCase } from "../../common/entities/UseCase";
 import { RepositoryFactory } from "../../common/factories/RepositoryFactory";
 import { Instance } from "../../instance/entities/Instance";
-import { InstanceRepositoryConstructor } from "../../instance/repositories/InstanceRepository";
 import { MetadataResponsible } from "../../metadata/entities/MetadataResponsible";
-import { Repositories } from "../../Repositories";
-import { Namespace } from "../../storage/Namespaces";
-import { StorageRepositoryConstructor } from "../../storage/repositories/StorageRepository";
-import {
-    PullRequestStatus,
-    ReceivedPullRequestNotification,
-} from "../entities/PullRequestNotification";
+import { PullRequestStatus, ReceivedPullRequestNotification } from "../entities/PullRequestNotification";
 
 export type UpdatePullRequestStatusError = "NOT_FOUND" | "PERMISSIONS" | "INVALID";
 
 export class UpdatePullRequestStatusUseCase implements UseCase {
     constructor(private repositoryFactory: RepositoryFactory, private localInstance: Instance) {}
 
-    public async execute(
-        id: string,
-        status: PullRequestStatus
-    ): Promise<Either<UpdatePullRequestStatusError, void>> {
-        const notification = await this.storageRepository(this.localInstance).getObjectInCollection<
-            ReceivedPullRequestNotification
-        >(Namespace.NOTIFICATIONS, id);
+    public async execute(id: string, status: PullRequestStatus): Promise<Either<UpdatePullRequestStatusError, void>> {
+        const storageClient = await this.repositoryFactory.configRepository(this.localInstance).getStorageClient();
+
+        const notification = await storageClient.getObjectInCollection<ReceivedPullRequestNotification>(
+            Namespace.NOTIFICATIONS,
+            id
+        );
 
         if (!notification) {
             return Either.error("NOT_FOUND");
@@ -42,37 +35,18 @@ export class UpdatePullRequestStatusUseCase implements UseCase {
             status,
         };
 
-        await this.storageRepository(this.localInstance).saveObjectInCollection(
-            Namespace.NOTIFICATIONS,
-            newNotification
-        );
+        await storageClient.saveObjectInCollection(Namespace.NOTIFICATIONS, newNotification);
 
         return Either.success(undefined);
     }
 
-    @cache()
-    private storageRepository(instance: Instance) {
-        return this.repositoryFactory.get<StorageRepositoryConstructor>(
-            Repositories.StorageRepository,
-            [instance]
-        );
-    }
-
-    @cache()
-    private instanceRepository(instance: Instance) {
-        return this.repositoryFactory.get<InstanceRepositoryConstructor>(
-            Repositories.InstanceRepository,
-            [instance, ""]
-        );
-    }
-
     private async hasPermissions(ids: string[]) {
         const responsibles = await this.getResponsibles(this.localInstance, ids);
-        const { id, userGroups } = await this.instanceRepository(this.localInstance).getUser();
+        const { id, userGroups } = await this.repositoryFactory.userRepository(this.localInstance).getCurrent();
 
         if (
             !responsibles.users?.find(user => user.id === id) &&
-            !responsibles.userGroups?.find(({ id }) => userGroups.includes(id))
+            !responsibles.userGroups?.find(({ id }) => userGroups.map(({ id }) => id).includes(id))
         ) {
             return false;
         }
@@ -81,9 +55,9 @@ export class UpdatePullRequestStatusUseCase implements UseCase {
     }
 
     private async getResponsibles(instance: Instance, ids: string[]) {
-        const responsibles = await this.storageRepository(instance).listObjectsInCollection<
-            MetadataResponsible
-        >(Namespace.RESPONSIBLES);
+        const storageClient = await this.repositoryFactory.configRepository(instance).getStorageClient();
+
+        const responsibles = await storageClient.listObjectsInCollection<MetadataResponsible>(Namespace.RESPONSIBLES);
 
         const metadataResponsibles = responsibles.filter(({ id }) => ids.includes(id));
 

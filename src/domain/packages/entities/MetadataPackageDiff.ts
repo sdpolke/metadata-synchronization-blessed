@@ -1,11 +1,7 @@
-import _ from "lodash";
 import stringify from "json-stringify-deterministic";
-import {
-    MetadataEntities,
-    MetadataPackage,
-    MetadataEntity,
-} from "./../../metadata/entities/MetadataEntities";
-import { Id, Ref, models } from "../../../types/d2-api";
+import _ from "lodash";
+import { Id, models, Ref } from "../../../types/d2-api";
+import { MetadataEntities, MetadataEntity, MetadataPackage } from "./../../metadata/entities/MetadataEntities";
 
 export interface MetadataPackageDiff {
     baseMetadata: MetadataPackage;

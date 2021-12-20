@@ -1,9 +1,9 @@
-import { D2SchemaProperties } from "d2-api/schemas";
+import { D2SchemaProperties } from "@eyeseetea/d2-api/schemas";
 import { isValidUid } from "d2/uid";
 import _ from "lodash";
 import { D2Api } from "../../types/d2-api";
-import { NestedRules } from "../../types/synchronization";
 import { MetadataEntities } from "./entities/MetadataEntities";
+import { NestedRules } from "./entities/MetadataExcludeIncludeRules";
 
 const blacklistedProperties = ["access"];
 const userProperties = ["user", "userAccesses", "userGroupAccesses"];
@@ -46,27 +46,16 @@ export function cleanObject(
     const organisationUnitFilter = removeOrgUnitReferences ? ["organisationUnits"] : [];
     const propsToRemove = [...sharingSettingsFilter, ...organisationUnitFilter];
 
-    return _.pick(
-        element,
-        _.difference(_.keys(element), cleanLeafRules, blacklistedProperties, propsToRemove)
-    );
+    return _.pick(element, _.difference(_.keys(element), cleanLeafRules, blacklistedProperties, propsToRemove));
 }
 
-export function cleanReferences(
-    references: Record<string, string[]>,
-    includeRules: string[][] = []
-): string[] {
+export function cleanReferences(references: Record<string, string[]>, includeRules: string[][] = []): string[] {
     const rules = _(includeRules).map(_.first).compact().value();
 
     return _.intersection(_.keys(references), rules);
 }
 
-export function getAllReferences(
-    api: D2Api,
-    obj: any,
-    type: string,
-    parents: string[] = []
-): Record<string, string[]> {
+export function getAllReferences(api: D2Api, obj: any, type: string, parents: string[] = []): Record<string, string[]> {
     let result: Record<string, string[]> = {};
     _.forEach(obj, (value, key) => {
         if (_.isObject(value) || _.isArray(value)) {
@@ -74,7 +63,7 @@ export function getAllReferences(
             result = _.deepMerge(result, recursive);
         } else if (isValidUid(value)) {
             const metadataType = _(parents)
-                .map(k => cleanToModelName(api, k, type))
+                .map(parent => cleanToModelName(api, parent, type))
                 .compact()
                 .first();
             if (metadataType) {
@@ -87,9 +76,7 @@ export function getAllReferences(
 }
 
 export function getSchemaByName(api: D2Api, modelName: string): D2SchemaProperties | undefined {
-    const model = _.values(api.models).find(
-        ({ schema }) => schema.name === modelName || schema.plural === modelName
-    );
+    const model = _.values(api.models).find(({ schema }) => schema.name === modelName || schema.plural === modelName);
     return model?.schema;
 }
 
@@ -103,11 +90,7 @@ export function isValidModel(api: D2Api, modelName: string): boolean {
     return metadata;
 }
 
-export function getSchemaByModelField(
-    api: D2Api,
-    field: string,
-    caller: string
-): D2SchemaProperties | undefined {
+export function getSchemaByModelField(api: D2Api, field: string, caller: string): D2SchemaProperties | undefined {
     const callerSchema = getSchemaByName(api, caller);
     const fieldProperty = callerSchema?.properties.find(({ fieldName }) => fieldName === field);
     if (!fieldProperty) return undefined;
@@ -126,6 +109,19 @@ export function cleanToModelName(api: D2Api, id: string, caller?: string): strin
         return "dataElements";
     } else if (id === "programStageDataElements") {
         return "dataElements";
+    } else if (id === "dataElementDimensions") {
+        return "dataElements";
+    } else if (
+        [
+            "organisationUnitGroupSetDimensions",
+            "categoryOptionGroupSetDimensions",
+            "dataElementGroupSetDimensions",
+        ].includes(id)
+    ) {
+        // GroupSet dimensions are not metadata models but include nested types
+        return null;
+    } else if (id === "trackedEntityTypeAttributes") {
+        return "trackedEntityAttributes";
     } else if (id === "attributeValues") {
         return "attributes";
     } else if (id === "commentOptionSet") {

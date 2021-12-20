@@ -1,12 +1,18 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: i18next-conv\n"
-"POT-Creation-Date: 2020-12-18T11:37:43.160Z\n"
+"POT-Creation-Date: 2021-11-10T11:18:59.186Z\n"
 "PO-Revision-Date: 2020-07-10T06:53:30.625Z\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1)\n"
+
+msgid ""
+"THIS NEW RELEASE INCLUDES SHARING SETTINGS PER INSTANCES. FOR THIS VERSION "
+"TO WORK PROPERLY, YOU WILL HAVE TO SET THE SHARING SETTINGS FOR EACH "
+"INSTANCE (Menu 'Instance Settings' > Contextual action 'Sharing settings')"
+msgstr ""
 
 msgid "Field {{field}} cannot be blank"
 msgstr ""
@@ -18,6 +24,9 @@ msgid "Field {{field}} needs to be a valid url"
 msgstr ""
 
 msgid "Field {{field}} is not valid"
+msgstr ""
+
+msgid "An instance with this name already exists"
 msgstr ""
 
 msgid "You need to provide a username and password combination"
@@ -86,22 +95,53 @@ msgstr ""
 msgid "Select at least one date for fixed period on create"
 msgstr ""
 
+msgid ""
+"Your current DHIS2 version is {{version}}. This version does not come with "
+"share settings in the data store and, in consequence, there are not sharing "
+"settings for each instance. This is a potential risk and we highly recommend "
+"you to update your DHIS2 version."
+msgstr ""
+
 msgid "Version is not valid (ie. {{validExample}})"
 msgstr ""
 
 msgid "Version is too small (next version is {{validExample}})"
 msgstr ""
 
+msgid "deleted"
+msgstr ""
+
+msgid "An error has ocurred mapping payload for instance {{name}}"
+msgstr ""
+
+msgid "Instance {{id}} not found"
+msgstr ""
+
+msgid "Analytics execution finished on {{name}}"
+msgstr ""
+
 msgid "Preparing synchronization"
 msgstr ""
 
-msgid "Start import in instance {{instance}}"
+msgid "Importing in instance {{instance}}"
 msgstr ""
 
-msgid "Program with Data Elements"
+msgid "Event Program with Data Elements"
+msgstr ""
+
+msgid "Tracker Program with Program Stages"
 msgstr ""
 
 msgid "Program with Indicators"
+msgstr ""
+
+msgid "Tracked Entity Attribute (to TEI)"
+msgstr ""
+
+msgid "Tracked Entity Attribute (to DE)"
+msgstr ""
+
+msgid "Tracker Data Elements"
 msgstr ""
 
 msgid "Unauthorized - You do not have permission to view this page."
@@ -200,6 +240,66 @@ msgstr ""
 msgid "Delete"
 msgstr ""
 
+msgid "Ready"
+msgstr ""
+
+msgid "Running"
+msgstr ""
+
+msgid "Failure"
+msgstr ""
+
+msgid "Done"
+msgstr ""
+
+msgid "Sync Rule"
+msgstr ""
+
+msgid "(package import)"
+msgstr ""
+
+msgid "(manual synchronization)"
+msgstr ""
+
+msgid "Type"
+msgstr ""
+
+msgid "Timestamp"
+msgstr ""
+
+msgid "Status"
+msgstr ""
+
+msgid "User"
+msgstr ""
+
+msgid "Metadata Types"
+msgstr ""
+
+msgid "Edit {{name}}"
+msgstr ""
+
+msgid "View summary"
+msgstr ""
+
+msgid "Deleting History Notifications"
+msgstr ""
+
+msgid "Successfully deleted {{total}} history notifications"
+msgstr ""
+
+msgid "Synchronization status"
+msgstr ""
+
+msgid "Delete History Notifications?"
+msgstr ""
+
+msgid "Are you sure you want to delete {{total}} history notifications?"
+msgstr ""
+
+msgid "Ok"
+msgstr ""
+
 msgid "Instances"
 msgstr ""
 
@@ -229,6 +329,9 @@ msgid "Close"
 msgstr ""
 
 msgid "Could not connect with remote instance"
+msgstr ""
+
+msgid "Applying mapping..."
 msgstr ""
 
 msgid "Could not apply mapping, please try again."
@@ -270,7 +373,16 @@ msgstr ""
 msgid "Preparing auto-mapping for {{total}} elements"
 msgstr ""
 
+msgid "Unable to apply auto-mapping"
+msgstr ""
+
 msgid "Could not find a suitable candidate to apply auto-mapping for {{id}}"
+msgstr ""
+
+msgid "Map by value"
+msgstr ""
+
+msgid "Value"
 msgstr ""
 
 msgid "Validating mapping for {{total}} elements"
@@ -287,6 +399,12 @@ msgstr ""
 
 msgid ""
 "You need to map this element before accessing its related metadata mapping"
+msgstr ""
+
+msgid "Please map the item before adding data element aggregations"
+msgstr ""
+
+msgid "Data element aggregation"
 msgstr ""
 
 msgid "ID"
@@ -310,6 +428,9 @@ msgstr ""
 msgid "Mapping Status"
 msgstr ""
 
+msgid "Mapped by value"
+msgstr ""
+
 msgid "Not mapped"
 msgstr ""
 
@@ -320,6 +441,9 @@ msgid "Mapped (Global)"
 msgstr ""
 
 msgid "Mapped"
+msgstr ""
+
+msgid "Set mapping by value"
 msgstr ""
 
 msgid "Select children"
@@ -337,13 +461,13 @@ msgstr ""
 msgid "Related metadata mapping"
 msgstr ""
 
-msgid "Ok"
-msgstr ""
-
 msgid "Related metadata mapping for {{name}} ({{id}})"
 msgstr ""
 
 msgid "Category Options"
+msgstr ""
+
+msgid "Category Option Combos"
 msgstr ""
 
 msgid "Options"
@@ -367,7 +491,19 @@ msgstr ""
 msgid "{{displayName}} Level"
 msgstr ""
 
+msgid "Program"
+msgstr ""
+
+msgid "Option set"
+msgstr ""
+
+msgid "Category"
+msgstr ""
+
 msgid "Only selected items"
+msgstr ""
+
+msgid "Show all entries"
 msgstr ""
 
 msgid "Select with children subtree"
@@ -385,15 +521,21 @@ msgstr ""
 msgid "Search by "
 msgstr ""
 
+msgid ""
+"There has been an error. You can either retry or contact your administrator "
+"if you think there has been an un recoverable error"
+msgstr ""
+
 msgid "There are pending migrations"
+msgstr ""
+
+msgid "Ignore"
 msgstr ""
 
 msgid "Migrations finished successfully, you may now continue to the app"
 msgstr ""
 
-msgid ""
-"There has been an error. You can either retry or contact your administrator "
-"if you think there has been an un recoverable error"
+msgid "Checking migrations"
 msgstr ""
 
 msgid "Migrate instance"
@@ -406,20 +548,20 @@ msgid "Continue to the App"
 msgstr ""
 
 msgid ""
-"The app needs to run all pending migrations (v{{instanceVersion}} -> "
-"v{{appVersion}}) in order to continue. This may take a long time, make sure "
-"the process is not interrupted."
+"The app needs to run pending migrations (from version {{instanceVersion}} to "
+"version {{appVersion}}) in order to continue. This may take a long time, "
+"make sure the process is not interrupted."
 msgstr ""
 
 msgid "Error"
 msgstr ""
 
-msgid "Continue to app anyway"
+msgid "Continue to the app anyway"
 msgstr ""
 
 msgid ""
-"The database version (v{{instanceVersion}}) is greater than the app version "
-"(v{{appVersion}}), we cannot continue. Please contact the administrator to "
+"The database version ({{instanceVersion}}) is greater than the app version "
+"({{appVersion}}), cannot continue. Please contact the administrator to "
 "update the app."
 msgstr ""
 
@@ -450,6 +592,11 @@ msgid "Create pull request"
 msgstr ""
 
 msgid "Couldn't connect with instance"
+msgstr ""
+
+msgid ""
+"You do not have the authority to one or multiple target instances of the "
+"sync rule"
 msgstr ""
 
 msgid "Unknown synchronization error"
@@ -501,6 +648,9 @@ msgid "{{n}} package(s) created successfully: {{list}}"
 msgstr ""
 
 msgid "{{n}} package(s) could not be created: {{list}}"
+msgstr ""
+
+msgid "Instance not found"
 msgstr ""
 
 msgid "Instances & Play Stores"
@@ -563,16 +713,14 @@ msgstr ""
 msgid "An error has ocurred importing packages"
 msgstr ""
 
-#, fuzzy
 msgid "Packages Import"
-msgstr "Paquetes"
+msgstr ""
 
 msgid "Import"
 msgstr ""
 
-#, fuzzy
 msgid "Packages mapping"
-msgstr "Paquetes"
+msgstr ""
 
 msgid "Attempting to update mapping without a valid data source"
 msgstr ""
@@ -580,9 +728,8 @@ msgstr ""
 msgid "Could not save mapping"
 msgstr ""
 
-#, fuzzy
 msgid "Package"
-msgstr "Paquetes"
+msgstr "Paquete"
 
 msgid "Unknown error happened loading package"
 msgstr ""
@@ -685,9 +832,6 @@ msgid "Version"
 msgstr ""
 
 msgid "DHIS2 Version"
-msgstr ""
-
-msgid "Status"
 msgstr ""
 
 msgid "Module"
@@ -798,6 +942,9 @@ msgstr ""
 msgid "Custodians for {{name}}"
 msgstr ""
 
+msgid "Scheduler"
+msgstr ""
+
 msgid "The token is empty"
 msgstr ""
 
@@ -858,6 +1005,18 @@ msgstr ""
 msgid "Create and update"
 msgstr ""
 
+msgid "Include owner and sharing settings"
+msgstr ""
+
+msgid "Remove organisation units and references (UID)"
+msgstr ""
+
+msgid "Remove organisation units and keep organisation units references (UID)"
+msgstr ""
+
+msgid "Remove users and keep user references (UID)"
+msgstr ""
+
 msgid "Disable atomic verification"
 msgstr ""
 
@@ -870,7 +1029,17 @@ msgstr ""
 msgid "Dry Run"
 msgstr ""
 
-msgid "Type"
+msgid ""
+"Ignore data with same value on destination (only for program indicators)"
+msgstr ""
+
+msgid "Ignore data with same value on destination"
+msgstr ""
+
+msgid "Sync rule {{idx}}: {{name}} ({{id}})"
+msgstr ""
+
+msgid "Errors"
 msgstr ""
 
 msgid "Imported"
@@ -886,9 +1055,6 @@ msgid "Total"
 msgstr ""
 
 msgid "Data element"
-msgstr ""
-
-msgid "Program"
 msgstr ""
 
 msgid "Number of entries"
@@ -912,10 +1078,19 @@ msgstr ""
 msgid "Events"
 msgstr ""
 
+msgid "Tracked Entity Instances"
+msgstr ""
+
 msgid "Unknown"
 msgstr ""
 
+msgid "Generating JSON"
+msgstr ""
+
 msgid "Synchronization Results"
+msgstr ""
+
+msgid "Download JSON Payload"
 msgstr ""
 
 msgid "Origin"
@@ -1015,6 +1190,9 @@ msgstr ""
 msgid "Programs"
 msgstr ""
 
+msgid "TEIs"
+msgstr ""
+
 msgid ""
 "If aggregation is enabled, the synchronization will use the Analytics "
 "endpoint and group data by organisation units children and the chosen time "
@@ -1025,10 +1203,16 @@ msgstr ""
 msgid "Source instance"
 msgstr ""
 
-msgid "Destination"
+msgid "with user {{username}}"
 msgstr ""
 
-msgid "Instance not found"
+msgid "with logged user"
+msgstr ""
+
+msgid "with stored user"
+msgstr ""
+
+msgid "Destination"
 msgstr ""
 
 msgid "Every day"
@@ -1058,6 +1242,12 @@ msgstr ""
 msgid "Cron expression must be valid"
 msgstr ""
 
+msgid "Json files downloaded successfull"
+msgstr ""
+
+msgid "An error has ocurred during the download"
+msgstr ""
+
 msgid "Cancel synchronization rule wizard"
 msgstr ""
 
@@ -1067,6 +1257,15 @@ msgid ""
 msgstr ""
 
 msgid "Yes"
+msgstr ""
+
+msgid "Save as sync Rule"
+msgstr ""
+
+msgid "Download JSON"
+msgstr ""
+
+msgid "Invalid origin instance"
 msgstr ""
 
 msgid "Target instances [{{total}}]"
@@ -1091,6 +1290,9 @@ msgid "Include rules"
 msgstr ""
 
 msgid "Exclude rules"
+msgstr ""
+
+msgid "{{total}} selected TEIs"
 msgstr ""
 
 msgid "All events"
@@ -1120,13 +1322,10 @@ msgstr ""
 msgid "Updates"
 msgstr ""
 
+msgid "Run Analytics before sync"
+msgstr ""
+
 msgid "Frequency"
-msgstr ""
-
-msgid "Save as sync Rule"
-msgstr ""
-
-msgid "Download JSON"
 msgstr ""
 
 msgid "Daily"
@@ -1159,6 +1358,12 @@ msgstr ""
 msgid "Aggregation type"
 msgstr ""
 
+msgid "Save empty values as zero (only for program indicators)"
+msgstr ""
+
+msgid "Save empty values as zero (only for indicators)"
+msgstr ""
+
 msgid "Sync all attribute category options"
 msgstr ""
 
@@ -1186,6 +1391,51 @@ msgstr ""
 msgid "You do not have assigned any organisation unit"
 msgstr ""
 
+msgid "Enrollment Date"
+msgstr ""
+
+msgid "Exclude relationships"
+msgstr ""
+
+msgid "Use sync rules periods"
+msgstr ""
+
+msgid "True"
+msgstr ""
+
+msgid "False"
+msgstr ""
+
+msgid "Use sync rule settings"
+msgstr ""
+
+msgid "MSF Settings"
+msgstr ""
+
+msgid "Analytics"
+msgstr ""
+
+msgid "Run Analytics"
+msgstr ""
+
+msgid "Number of years to include"
+msgstr ""
+
+msgid "Data values settings"
+msgstr ""
+
+msgid "Delete data values before sync"
+msgstr ""
+
+msgid "Check existing data values in previous periods"
+msgstr ""
+
+msgid "Project minimum dates"
+msgstr ""
+
+msgid "Minimum date"
+msgstr ""
+
 msgid "Metadata Synchronization History"
 msgstr ""
 
@@ -1197,65 +1447,6 @@ msgstr ""
 
 msgid "Deleted Synchronization History"
 msgstr ""
-
-msgid "Ready"
-msgstr ""
-
-msgid "Running"
-msgstr ""
-
-msgid "Failure"
-msgstr ""
-
-msgid "Done"
-msgstr ""
-
-msgid "Sync Rule"
-msgstr ""
-
-#, fuzzy
-msgid "(package import)"
-msgstr "Paquetes"
-
-msgid "(manual synchronization)"
-msgstr ""
-
-msgid "Timestamp"
-msgstr ""
-
-msgid "User"
-msgstr ""
-
-msgid "Metadata Types"
-msgstr ""
-
-msgid "Edit {{name}}"
-msgstr ""
-
-msgid "View summary"
-msgstr ""
-
-msgid "Deleting History Notifications"
-msgstr ""
-
-msgid "Failed to delete some history notifications"
-msgstr ""
-
-msgid "Successfully deleted {{count}} history notifications"
-msgid_plural "Successfully deleted {{count}} history notifications"
-msgstr[0] ""
-msgstr[1] ""
-
-msgid "Synchronization status"
-msgstr ""
-
-msgid "Delete History Notifications?"
-msgstr ""
-
-msgid "Are you sure you want to delete {{count}} history notifications?"
-msgid_plural "Are you sure you want to delete {{count}} history notifications?"
-msgstr[0] ""
-msgstr[1] ""
 
 msgid "Aggregated Data Sync"
 msgstr ""
@@ -1373,6 +1564,12 @@ msgid ""
 "metadata requests coming from other DHIS instances."
 msgstr ""
 
+msgid "Settings"
+msgstr ""
+
+msgid "Admin Dashboard"
+msgstr ""
+
 msgid "Please fix the issues before testing the connection"
 msgstr ""
 
@@ -1412,19 +1609,14 @@ msgstr ""
 msgid "Saving..."
 msgstr ""
 
-msgid "Analytics execution finished on {{name}}"
-msgstr ""
-
 msgid "Deleting Instances"
 msgstr ""
 
 msgid "Failed to delete some instances"
 msgstr ""
 
-msgid "Successfully deleted {{count}} instances"
-msgid_plural "Successfully deleted {{count}} instances"
-msgstr[0] ""
-msgstr[1] ""
+msgid "Successfully deleted {{total}} instances"
+msgstr ""
 
 msgid "Server name"
 msgstr ""
@@ -1438,13 +1630,14 @@ msgstr ""
 msgid "Run analytics"
 msgstr ""
 
+msgid "An error has ocurred editing share settings"
+msgstr ""
+
 msgid "Delete Instances?"
 msgstr ""
 
-msgid "Are you sure you want to delete {{count}} instances?"
-msgid_plural "Are you sure you want to delete {{count}} instances?"
-msgstr[0] ""
-msgstr[1] ""
+msgid "Are you sure you want to delete {{total}} instances?"
+msgstr ""
 
 msgid "Instance Settings"
 msgstr ""
@@ -1507,6 +1700,9 @@ msgid "Please select at least one element from the table to synchronize"
 msgstr ""
 
 msgid "Unknown error with the request"
+msgstr ""
+
+msgid "An error has ocurred during the synchronization"
 msgstr ""
 
 msgid "New module"
@@ -1614,6 +1810,27 @@ msgstr ""
 msgid "Refresh"
 msgstr ""
 
+msgid "Application storage"
+msgstr ""
+
+msgid "Data Store"
+msgstr ""
+
+msgid "Metadata constant"
+msgstr ""
+
+msgid "Updating storage location, please wait..."
+msgstr ""
+
+msgid "Change storage"
+msgstr ""
+
+msgid ""
+"When changing the storage of the application, all stored information will be "
+"moved to the new storage. This might take a while, please wait. Do you want "
+"to proceed?"
+msgstr ""
+
 msgid "Edit store"
 msgstr ""
 
@@ -1644,10 +1861,8 @@ msgstr ""
 msgid "Delete Stores?"
 msgstr ""
 
-msgid "Are you sure you want to delete {{count}} stores?"
-msgid_plural "Are you sure you want to delete {{count}} stores?"
-msgstr[0] ""
-msgstr[1] ""
+msgid "Are you sure you want to delete {{total}} stores?"
+msgstr ""
 
 msgid "New {{type}} synchronization rule"
 msgstr ""
@@ -1676,19 +1891,26 @@ msgstr ""
 msgid "Last executed"
 msgstr ""
 
+msgid "Last executed by"
+msgstr ""
+
+msgid "Last Updated"
+msgstr ""
+
+msgid "Last Updated By"
+msgstr ""
+
+msgid "Generating JSON file"
+msgstr ""
+
+msgid "Exporting synchronization rules"
+msgstr ""
+
 msgid "Deleting Sync Rules"
 msgstr ""
 
-msgid "deleted"
+msgid "Successfully deleted {{total}} rules"
 msgstr ""
-
-msgid "Failed to delete some rules"
-msgstr ""
-
-msgid "Successfully deleted {{count}} rules"
-msgid_plural "Successfully deleted {{count}} rules"
-msgstr[0] ""
-msgstr[1] ""
 
 msgid "Synchronizing {{name}}"
 msgstr ""
@@ -1696,10 +1918,31 @@ msgstr ""
 msgid "Successfully updated sync rule"
 msgstr ""
 
+msgid "Couldn't read the file because it's not valid"
+msgstr ""
+
+msgid "Importing rule(s)"
+msgstr ""
+
+msgid "{{name}} ({{id}}): Invalid type found: {{type}}"
+msgstr ""
+
+msgid "Importing {{n}} rules"
+msgstr ""
+
+msgid "Imported {{n}} rules"
+msgstr ""
+
 msgid "Execute"
 msgstr ""
 
+msgid "Export rule"
+msgstr ""
+
 msgid "Toggle scheduling"
+msgstr ""
+
+msgid "Import sync rules"
 msgstr ""
 
 msgid "Last executed date"
@@ -1714,10 +1957,85 @@ msgstr ""
 msgid "Delete Rules?"
 msgstr ""
 
-msgid "Are you sure you want to delete {{count}} rules?"
-msgid_plural "Are you sure you want to delete {{count}} rules?"
-msgstr[0] ""
-msgstr[1] ""
+msgid "Are you sure you want to delete {{total}} rules?"
+msgstr ""
+
+msgid "Synchronization History"
+msgstr ""
+
+msgid "Server error on aggregation"
+msgstr ""
+
+msgid "Aggregate Data For HMIS"
+msgstr ""
+
+msgid "Aggregate Data"
+msgstr ""
+
+msgid "Synchronization Progress"
+msgstr ""
+
+msgid "Download payload"
+msgstr ""
+
+msgid "Advanced Settings"
+msgstr ""
+
+msgid "Go To Admin Dashboard"
+msgstr ""
+
+msgid "Go to History"
+msgstr ""
+
+msgid "MSF Validation"
+msgstr ""
+
+msgid "Do you want to proceed?"
+msgstr ""
+
+msgid "Syncing process will stop if you leave the current page"
+msgstr ""
+
+msgid "Retrieving information from the system..."
+msgstr ""
+
+msgid "Synchronizing aggregated data..."
+msgstr ""
+
+msgid "Run analytics is disabled, last analytics execution: {{lastExecution}}"
+msgstr ""
+
+msgid "Finished aggregated data synchronization with errors"
+msgstr ""
+
+msgid "Finished aggregated data synchronization successfully"
+msgstr ""
+
+msgid "Checking data values in previous periods ...."
+msgstr ""
+
+msgid "Starting Sync Rule {{name}} ..."
+msgstr ""
+
+msgid "Summary of Sync Rule"
+msgstr ""
+
+msgid "Error found: {{message}}"
+msgstr ""
+
+msgid "Finished Sync Rule {{name}}"
+msgstr ""
+
+msgid "never"
+msgstr ""
+
+msgid "Error retrieving instance {{name}} to delete previous data values"
+msgstr ""
+
+msgid ""
+"Deleting previous data values in target instance {{name}} for period "
+"{{period}}..."
+msgstr ""
 
 msgid "Widget cannot be used until an administrator opens the application"
 msgstr ""
@@ -1741,6 +2059,9 @@ msgid "Action"
 msgstr ""
 
 msgid "Program Rule"
+msgstr ""
+
+msgid "Categories"
 msgstr ""
 
 msgid "Url"
@@ -1767,6 +2088,9 @@ msgstr ""
 msgid "Fixed period"
 msgstr ""
 
+msgid "Since last execution"
+msgstr ""
+
 msgid "Today"
 msgstr ""
 
@@ -1777,6 +2101,12 @@ msgid "Last 7 days"
 msgstr ""
 
 msgid "Last 14 days"
+msgstr ""
+
+msgid "Last 30 days"
+msgstr ""
+
+msgid "Last 90 days"
 msgstr ""
 
 msgid "This week"

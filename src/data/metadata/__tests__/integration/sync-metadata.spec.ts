@@ -1,14 +1,13 @@
 import { Request, Server } from "miragejs";
 import { AnyRegistry } from "miragejs/-types";
 import Schema from "miragejs/orm/schema";
-import { RepositoryFactory } from "../../../../domain/common/factories/RepositoryFactory";
+import { Repositories, RepositoryFactory } from "../../../../domain/common/factories/RepositoryFactory";
 import { Instance } from "../../../../domain/instance/entities/Instance";
 import { MetadataSyncUseCase } from "../../../../domain/metadata/usecases/MetadataSyncUseCase";
-import { Repositories } from "../../../../domain/Repositories";
-import { SynchronizationBuilder } from "../../../../types/synchronization";
+import { SynchronizationBuilder } from "../../../../domain/synchronization/entities/SynchronizationBuilder";
 import { startDhis } from "../../../../utils/dhisServer";
+import { ConfigAppRepository } from "../../../config/ConfigAppRepository";
 import { InstanceD2ApiRepository } from "../../../instance/InstanceD2ApiRepository";
-import { StorageDataStoreRepository } from "../../../storage/StorageDataStoreRepository";
 import { TransformationD2ApiRepository } from "../../../transformations/TransformationD2ApiRepository";
 import { MetadataD2ApiRepository } from "../../MetadataD2ApiRepository";
 
@@ -39,6 +38,14 @@ describe("Sync metadata", () => {
 
         local.get("/dataStore/metadata-synchronization/instances", async () => [
             {
+                type: "local",
+                id: "LOCAL",
+                name: "This instance",
+                description: "",
+                url: "http://origin.test",
+            },
+            {
+                type: "dhis",
                 id: "DESTINATION",
                 name: "Destination test",
                 url: "http://destination.test",
@@ -48,7 +55,40 @@ describe("Sync metadata", () => {
             },
         ]);
 
+        local.get("/dataStore/metadata-synchronization/instances-LOCAL", async () => ({}));
         local.get("/dataStore/metadata-synchronization/instances-DESTINATION", async () => ({}));
+
+        local.get("/dataStore/metadata-synchronization/instances-LOCAL/metaData", async () => ({
+            created: "2021-03-30T01:59:59.191",
+            lastUpdated: "2021-04-20T09:34:00.780",
+            externalAccess: false,
+            publicAccess: "rw------",
+            user: { id: "H4atNsEuKxP" },
+            userGroupAccesses: [],
+            userAccesses: [],
+            lastUpdatedBy: { id: "s5EVHUwoFKu" },
+            namespace: "metadata-synchronization",
+            key: "instances-LOCAL",
+            value: "",
+            favorite: false,
+            id: "Db5532sXKXT",
+        }));
+
+        local.get("/dataStore/metadata-synchronization/instances-DESTINATION/metaData", async () => ({
+            created: "2021-03-30T01:59:59.191",
+            lastUpdated: "2021-04-20T09:34:00.780",
+            externalAccess: false,
+            publicAccess: "rw------",
+            user: { id: "H4atNsEuKxP" },
+            userGroupAccesses: [],
+            userAccesses: [],
+            lastUpdatedBy: { id: "s5EVHUwoFKu" },
+            namespace: "metadata-synchronization",
+            key: "instances-DESTINATION",
+            value: "",
+            favorite: false,
+            id: "Db5532sXKX1",
+        }));
 
         const addMetadataToDb = async (schema: Schema<AnyRegistry>, request: Request) => {
             schema.db.metadata.insert(JSON.parse(request.requestBody));
@@ -98,7 +138,7 @@ describe("Sync metadata", () => {
             excludedIds: [],
         };
 
-        const sync = new MetadataSyncUseCase(builder, repositoryFactory, localInstance, "");
+        const sync = new MetadataSyncUseCase(builder, repositoryFactory, localInstance);
 
         const payload = await sync.buildPayload();
         expect(payload.dataElements?.find(({ id }) => id === "id1")).toBeDefined();
@@ -126,7 +166,7 @@ describe("Sync metadata", () => {
             excludedIds: [],
         };
 
-        const sync = new MetadataSyncUseCase(builder, repositoryFactory, localInstance, "");
+        const sync = new MetadataSyncUseCase(builder, repositoryFactory, localInstance);
 
         const payload = await sync.buildPayload();
         expect(payload.dataElements?.find(({ id }) => id === "id2")).toBeDefined();
@@ -142,9 +182,9 @@ describe("Sync metadata", () => {
 });
 
 function buildRepositoryFactory() {
-    const repositoryFactory: RepositoryFactory = new RepositoryFactory();
+    const repositoryFactory: RepositoryFactory = new RepositoryFactory("");
     repositoryFactory.bind(Repositories.InstanceRepository, InstanceD2ApiRepository);
-    repositoryFactory.bind(Repositories.StorageRepository, StorageDataStoreRepository);
+    repositoryFactory.bind(Repositories.ConfigRepository, ConfigAppRepository);
     repositoryFactory.bind(Repositories.MetadataRepository, MetadataD2ApiRepository);
     repositoryFactory.bind(Repositories.TransformationRepository, TransformationD2ApiRepository);
     return repositoryFactory;

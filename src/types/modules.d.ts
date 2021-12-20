@@ -9,7 +9,8 @@ declare module "d2/uid" {
 
 declare module "@dhis2/d2-i18n" {
     export function t(value: string): string;
-    export function t(value: string, variable?: any): string;
+    export function t(value: string, options?: { [key: string]: any }): string;
+    export function changeLanguage(locale: string);
 }
 
 declare module "nano-memoize" {
@@ -44,3 +45,5 @@ declare module "nano-memoize" {
 declare module "json-stringify-deterministic" {
     export default function stringify(obj: any): string;
 }
+
+declare module "*.png";

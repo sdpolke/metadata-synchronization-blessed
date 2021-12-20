@@ -1,6 +1,6 @@
 import { generateUid } from "d2/uid";
 import _ from "lodash";
-import { SynchronizationBuilder } from "../../../types/synchronization";
+import { SynchronizationBuilder } from "../../synchronization/entities/SynchronizationBuilder";
 import { NamedRef, Ref, SharedRef } from "../../common/entities/Ref";
 import { SharingSetting } from "../../common/entities/SharingSetting";
 import { ModelValidation, validateModel, ValidationError } from "../../common/entities/Validations";
@@ -63,10 +63,7 @@ export abstract class GenericModule implements BaseModule {
     }
 
     public abstract update(data?: Partial<Pick<GenericModule, keyof BaseModule>>): GenericModule;
-    public abstract toSyncBuilder(): Omit<
-        SynchronizationBuilder,
-        "originInstance" | "targetInstances"
-    >;
+    public abstract toSyncBuilder(): Omit<SynchronizationBuilder, "originInstance" | "targetInstances">;
 
     public hasPermissions(permission: "read" | "write", userId: string, userGroups: Ref[]) {
         const { publicAccess = "--------", userAccesses = [], userGroupAccesses = [] } = this;

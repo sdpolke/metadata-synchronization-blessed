@@ -6,10 +6,7 @@ export interface DhisOptions {
     version?: string;
 }
 
-export function startDhis(
-    mirageOptions: ServerConfig<AnyModels, AnyFactories> = {},
-    options: DhisOptions = {}
-) {
+export function startDhis(mirageOptions: ServerConfig<AnyModels, AnyFactories> = {}, options: DhisOptions = {}) {
     const { version = "2.30" } = options;
 
     const server = new Server({
@@ -50,6 +47,7 @@ export function startDhis(
                 ],
             }));
             this.get("/attributes", async () => ({ attributes: [] }));
+            this.get("/constants", async () => ({ constants: [] }));
             this.get("/me", async () => ({ userCredentials: { username: "test-user" } }));
             this.get("/me/authorization", async () => []);
             this.get("/userSettings", async () => ({
@@ -58,12 +56,15 @@ export function startDhis(
             }));
             this.get("/system/info", async () => ({ version }));
             this.get("/apps", async () => []);
+            this.get("/dataStore/metadata-synchronization/config", async () => ({
+                version: 0,
+            }));
         },
     });
 
     server.pretender.handledRequest = function () {};
     server.pretender.unhandledRequest = function (verb, path) {
-        console.log("Unknown request", verb, path);
+        console.error("Unknown request", verb, path);
     };
 
     return server;

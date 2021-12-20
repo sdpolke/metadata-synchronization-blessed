@@ -1,27 +1,20 @@
-import { cache } from "../../../utils/cache";
+import { Namespace } from "../../../data/storage/Namespaces";
 import { UseCase } from "../../common/entities/UseCase";
 import { RepositoryFactory } from "../../common/factories/RepositoryFactory";
 import { Instance } from "../../instance/entities/Instance";
-import { InstanceRepositoryConstructor } from "../../instance/repositories/InstanceRepository";
 import { MetadataModule } from "../../modules/entities/MetadataModule";
-import { Repositories } from "../../Repositories";
-import { Namespace } from "../../storage/Namespaces";
-import { StorageRepositoryConstructor } from "../../storage/repositories/StorageRepository";
 import { BasePackage, Package } from "../entities/Package";
 
 export class ListPackagesUseCase implements UseCase {
     constructor(private repositoryFactory: RepositoryFactory, private localInstance: Instance) {}
 
-    public async execute(
-        bypassSharingSettings = false,
-        instance = this.localInstance
-    ): Promise<Package[]> {
-        const userGroups = await this.instanceRepository(this.localInstance).getUserGroups();
-        const { id: userId } = await this.instanceRepository(this.localInstance).getUser();
+    public async execute(bypassSharingSettings = false, instance = this.localInstance): Promise<Package[]> {
+        const storageClient = await this.repositoryFactory.configRepository(instance).getStorageClient();
 
-        const items = await this.storageRepository(instance).listObjectsInCollection<BasePackage>(
-            Namespace.PACKAGES
-        );
+        const { userGroups } = await this.repositoryFactory.userRepository(this.localInstance).getCurrent();
+        const { id: userId } = await this.repositoryFactory.userRepository(this.localInstance).getCurrent();
+
+        const items = await storageClient.listObjectsInCollection<BasePackage>(Namespace.PACKAGES);
 
         const isRemoteInstance = instance !== this.localInstance;
 
@@ -34,21 +27,5 @@ export class ListPackagesUseCase implements UseCase {
                     isRemoteInstance ||
                     MetadataModule.build(module).hasPermissions("read", userId, userGroups)
             );
-    }
-
-    @cache()
-    private storageRepository(instance: Instance) {
-        return this.repositoryFactory.get<StorageRepositoryConstructor>(
-            Repositories.StorageRepository,
-            [instance]
-        );
-    }
-
-    @cache()
-    private instanceRepository(instance: Instance) {
-        return this.repositoryFactory.get<InstanceRepositoryConstructor>(
-            Repositories.InstanceRepository,
-            [instance, ""]
-        );
     }
 }

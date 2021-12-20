@@ -1,33 +1,44 @@
+import i18n from "../../../locales";
 import { UseCase } from "../../common/entities/UseCase";
 import { ValidationError } from "../../common/entities/Validations";
 import { RepositoryFactory } from "../../common/factories/RepositoryFactory";
-import { Repositories } from "../../Repositories";
-import { Namespace } from "../../storage/Namespaces";
-import { StorageRepositoryConstructor } from "../../storage/repositories/StorageRepository";
 import { Instance } from "../entities/Instance";
 
 export class SaveInstanceUseCase implements UseCase {
-    constructor(
-        private repositoryFactory: RepositoryFactory,
-        private localInstance: Instance,
-        private encryptionKey: string
-    ) {}
+    constructor(private repositoryFactory: RepositoryFactory, private localInstance: Instance) {}
 
     public async execute(instance: Instance): Promise<ValidationError[]> {
-        const storageRepository = this.repositoryFactory.get<StorageRepositoryConstructor>(
-            Repositories.StorageRepository,
-            [this.localInstance]
-        );
+        const instanceRepository = this.repositoryFactory.instanceRepository(this.localInstance);
 
-        const validations = instance.validate();
+        const instanceByName = await instanceRepository.getByName(instance.name);
 
-        if (validations.length === 0) {
-            await storageRepository.saveObjectInCollection(
-                Namespace.INSTANCES,
-                instance.encryptPassword(this.encryptionKey).toObject()
-            );
+        if (instanceByName && instanceByName.id !== instance.id) {
+            return [
+                {
+                    property: "name",
+                    error: "name_exists",
+                    description: i18n.t("An instance with this name already exists"),
+                },
+            ];
         }
 
-        return validations;
+        // Validate model and save it if there're no errors
+        const modelValidations = instance.validate();
+        if (modelValidations.length > 0) return modelValidations;
+
+        const editedInstance = instance.update({ version: await this.getVersion(instance) });
+
+        await instanceRepository.save(editedInstance);
+
+        return [];
+    }
+
+    private async getVersion(instance: Instance): Promise<string | undefined> {
+        try {
+            const version = await this.repositoryFactory.instanceRepository(instance).getVersion();
+            return version;
+        } catch (error: any) {
+            return instance.version;
+        }
     }
 }

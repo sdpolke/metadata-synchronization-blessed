@@ -1,1 +1,6 @@
-src/react-app.d.ts
+build
+node_modules
+*.min.js
+*.min.css
+dist
+metadata-synchronization-server.js

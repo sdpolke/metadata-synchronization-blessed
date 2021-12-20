@@ -1,8 +1,33 @@
 import axios from "axios";
-import { D2Api } from "../types/d2-api";
 import _ from "lodash";
-import moment from "moment";
-import { TableFilters, TableList, TablePagination } from "../types/d2-ui-components";
+import moment, { Moment } from "moment";
+import { D2Api } from "../types/d2-api";
+
+interface TableList {
+    objects: any[];
+    pager: {
+        total: number;
+        page: number;
+        pageCount?: number;
+    };
+}
+
+interface TableFilters {
+    search?: string;
+    fields?: string[];
+    lastUpdatedDate?: Moment;
+    groupFilter?: string;
+    customFilters?: string[];
+    customFields?: string[];
+    metadataType?: string;
+}
+
+interface TablePagination {
+    page?: number;
+    pageSize?: number;
+    sorting?: string[];
+    paging?: boolean;
+}
 
 type DeletedObjectData = {
     uid: string;
@@ -12,6 +37,9 @@ type DeletedObjectData = {
     deletedBy: string;
 };
 
+/**
+ * @deprecated This class should not be used for future developments
+ */
 export default class DeletedObject {
     private data: DeletedObjectData;
 
@@ -47,17 +75,12 @@ export default class DeletedObject {
         );
     }
 
-    public static async list(
-        api: D2Api,
-        filters: TableFilters,
-        pagination: TablePagination
-    ): Promise<TableList> {
+    public static async list(api: D2Api, filters: TableFilters, pagination: TablePagination): Promise<TableList> {
         const { search = null, lastUpdatedDate = null } = filters || {};
-        const { page = 1, pageSize = 20, paging = true, sorting = ["id", "asc"] } =
-            pagination || {};
+        const { page = 1, pageSize = 20, paging = true, sorting = ["id", "asc"] } = pagination || {};
 
         const { deletedObjects: rawData } = (
-            await axios.get(api.apiPath + "/deletedObjects", {
+            await axios.get<any>(api.apiPath + "/deletedObjects", {
                 withCredentials: true,
                 params: {
                     fields: ":all,uid~rename(id)",
@@ -76,9 +99,7 @@ export default class DeletedObject {
                     : true
             )
             .filter(object =>
-                lastUpdatedDate && object.deletedAt
-                    ? moment(lastUpdatedDate).isSameOrBefore(object.deletedAt)
-                    : true
+                lastUpdatedDate && object.deletedAt ? moment(lastUpdatedDate).isSameOrBefore(object.deletedAt) : true
             )
             .value();
 

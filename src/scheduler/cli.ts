@@ -1,13 +1,13 @@
+import { command, option, run, string } from "cmd-ts";
 import "dotenv/config";
 import fs from "fs";
 import { configure, getLogger } from "log4js";
 import path from "path";
-import * as yargs from "yargs";
+import { Future, FutureData } from "../domain/common/entities/Future";
 import { Instance } from "../domain/instance/entities/Instance";
-import { MigrationsRunner } from "../migrations";
-import { migrationTasks } from "../migrations/tasks";
 import { CompositionRoot } from "../presentation/CompositionRoot";
 import { D2Api } from "../types/d2-api";
+import { ConfigModel, SchedulerConfig } from "./entities/SchedulerConfig";
 import Scheduler from "./scheduler";
 
 const development = process.env.NODE_ENV === "development";
@@ -20,31 +20,50 @@ configure({
     categories: { default: { appenders: ["file", "out"], level: development ? "all" : "debug" } },
 });
 
-// Root folder on "yarn start" is ./src, ask path to go back one level
-const rootFolder = development ? ".." : "";
-const { config } = yargs
-    .options({
-        config: {
-            type: "string",
-            alias: "c",
-            describe: "Configuration file",
-            default: path.join(__dirname, rootFolder, "app-config.json"),
-        },
-    })
-    .coerce("config", path => {
-        return JSON.parse(fs.readFileSync(path, "utf8"));
-    }).argv;
+const checkMigrations = (compositionRoot: CompositionRoot): FutureData<boolean> => {
+    return Future.fromPromise(compositionRoot.migrations.hasPending())
+        .mapError(() => {
+            return "Unable to connect with remote instance";
+        })
+        .flatMap(pendingMigrations => {
+            if (pendingMigrations) {
+                return Future.error<string, boolean>("There are pending migrations, unable to continue");
+            }
 
-const checkMigrations = async (api: D2Api) => {
-    const debug = getLogger("migrations").debug;
-    const runner = await MigrationsRunner.init({ api, debug, migrations: migrationTasks });
-    if (runner.hasPendingMigrations()) {
-        getLogger("migrations").fatal("Scheduler is unable to continue due to database migrations");
-        throw new Error("There are pending migrations to be applied to the data store");
-    }
+            return Future.success(pendingMigrations);
+        });
 };
 
-const start = async (): Promise<void> => {
+async function main() {
+    const cmd = command({
+        name: path.basename(__filename),
+        description: "Scheduler to execute predictors on multiple DHIS2 instances",
+        args: {
+            config: option({
+                type: string,
+                long: "config",
+                short: "c",
+                description: "Configuration file",
+            }),
+        },
+        handler: async args => {
+            try {
+                const text = fs.readFileSync(args.config, "utf8");
+                const contents = JSON.parse(text);
+                const config = ConfigModel.unsafeDecode(contents);
+
+                await start(config);
+            } catch (err) {
+                getLogger("main").fatal(err);
+                process.exit(1);
+            }
+        },
+    });
+
+    run(cmd, process.argv.slice(2));
+}
+
+const start = async (config: SchedulerConfig): Promise<void> => {
     const { baseUrl, username, password, encryptionKey } = config;
     if (!baseUrl || !username || !password || !encryptionKey) {
         getLogger("main").fatal("Missing fields from configuration file");
@@ -52,23 +71,26 @@ const start = async (): Promise<void> => {
     }
 
     const api = new D2Api({ baseUrl, auth: { username, password }, backend: "fetch" });
-    await checkMigrations(api);
+    const version = await api.getVersion();
+    const compositionRoot = new CompositionRoot(
+        Instance.build({
+            type: "local",
+            name: "This instance",
+            url: baseUrl,
+            username,
+            password,
+            version,
+        }),
+        encryptionKey
+    );
+
+    await checkMigrations(compositionRoot).toPromise();
 
     const welcomeMessage = `Script initialized on ${baseUrl} with user ${username}`;
     getLogger("main").info("-".repeat(welcomeMessage.length));
     getLogger("main").info(welcomeMessage);
 
-    const version = await api.getVersion();
-    const instance = Instance.build({
-        name: "This instance",
-        url: baseUrl,
-        username,
-        password,
-        version,
-    });
-
-    const compositionRoot = new CompositionRoot(instance, encryptionKey);
     new Scheduler(api, compositionRoot).initialize();
 };
 
-start().catch(console.error);
+main();

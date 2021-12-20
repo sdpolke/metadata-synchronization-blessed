@@ -2,10 +2,23 @@ import { generateUid } from "d2/uid";
 import _ from "lodash";
 import moment from "moment";
 import i18n from "../../../locales";
-import { availablePeriods } from "../../../utils/synchronization";
-import { DataSyncPeriod } from "../../aggregated/types";
-import { ValidationError } from "../../common/entities/Validations";
 import { NonNullableValues } from "../../../types/utils";
+import { availablePeriods } from "../../../utils/synchronization";
+import { DataSyncPeriod } from "../../aggregated/entities/DataSyncPeriod";
+import { ValidationError } from "../../common/entities/Validations";
+
+export interface DateFilter {
+    period: DataSyncPeriod;
+    startDate?: Date;
+    endDate?: Date;
+}
+
+export type FilterWhere = "startsWith" | "contains" | "endsWith";
+
+export interface StringMatch {
+    where: FilterWhere | null;
+    value: string;
+}
 
 export interface FilterRule {
     id: string;
@@ -16,22 +29,9 @@ export interface FilterRule {
 }
 
 export type FilterRuleField = keyof FilterRule;
+export type ValidStringMatch = NonNullableValues<StringMatch>;
 
-export const filterRuleFields: FilterRuleField[] = [
-    "metadataType",
-    "created",
-    "lastUpdated",
-    "stringMatch",
-];
-
-export interface StringMatch {
-    where: FilterWhere | null;
-    value: string;
-}
-
-type ValidStringMatch = NonNullableValues<StringMatch>;
-
-export type FilterWhere = "startsWith" | "contains" | "endsWith";
+export const filterRuleFields: FilterRuleField[] = ["metadataType", "created", "lastUpdated", "stringMatch"];
 
 export const filterTypeNames: Record<keyof FilterRule, string> = {
     id: i18n.t("Id"),
@@ -55,12 +55,6 @@ export function getInitialFilterRule(): FilterRule {
         lastUpdated: { period: "ALL" },
         stringMatch: { where: null, value: "" },
     };
-}
-
-export interface DateFilter {
-    period: DataSyncPeriod;
-    startDate?: Date;
-    endDate?: Date;
 }
 
 /* Functions */
@@ -126,10 +120,7 @@ export function getDateFilterString(dateFilter: DateFilter): string {
 
 const initialStringMatch: StringMatch = { value: "", where: "contains" };
 
-export function updateStringMatch(
-    filterRule: FilterRule,
-    partial: Partial<StringMatch>
-): FilterRule {
+export function updateStringMatch(filterRule: FilterRule, partial: Partial<StringMatch>): FilterRule {
     return updateFilterRule(filterRule, "stringMatch", {
         ...initialStringMatch,
         ...filterRule.stringMatch,

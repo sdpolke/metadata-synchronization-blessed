@@ -1,5 +1,5 @@
 import _ from "lodash";
-import { cleanNestedMappedId } from "../../../presentation/react/components/mapping-table/utils";
+import { cleanNestedMappedId } from "../../../presentation/react/core/components/mapping-table/utils";
 import { UseCase } from "../../common/entities/UseCase";
 import { DataSource } from "../../instance/entities/DataSource";
 import { cleanOrgUnitPath, cleanOrgUnitPaths } from "../../synchronization/utils";
@@ -25,13 +25,7 @@ export class ApplyMappingUseCase extends GenericMappingUseCase implements UseCas
 
             const newMapping = _.cloneDeep(mapping);
 
-            for (const {
-                selection,
-                mappingType,
-                mappedId,
-                global = false,
-                overrides = {},
-            } of updates) {
+            for (const { selection, mappingType, mappedId, mappedValue, global = false, overrides = {} } of updates) {
                 for (const id of selection) {
                     _.unset(newMapping, [mappingType, id]);
                     if (isChildrenMapping || mappedId) {
@@ -41,6 +35,7 @@ export class ApplyMappingUseCase extends GenericMappingUseCase implements UseCas
                             destinationInstance,
                             originalId: _.last(id.split("-")) ?? id,
                             mappedId: cleanOrgUnitPath(mappedId),
+                            mappedValue,
                         });
 
                         _.set(newMapping, [mappingType, id], {

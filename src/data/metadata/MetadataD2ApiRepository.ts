@@ -1,9 +1,9 @@
-import { FilterBase, FilterValueBase } from "d2-api/api/common";
+import { FilterBase, FilterValueBase } from "@eyeseetea/d2-api/api/common";
 import _ from "lodash";
 import moment from "moment";
 import { buildPeriodFromParams } from "../../domain/aggregated/utils";
 import { IdentifiableRef, Ref } from "../../domain/common/entities/Ref";
-import { DataSource } from "../../domain/instance/entities/DataSource";
+import { DataSource, isDhisInstance } from "../../domain/instance/entities/DataSource";
 import { Instance } from "../../domain/instance/entities/Instance";
 import {
     DateFilter,
@@ -23,9 +23,9 @@ import {
     ListMetadataResponse,
     MetadataRepository,
 } from "../../domain/metadata/repositories/MetadataRepository";
-import { MetadataImportParams } from "../../domain/metadata/types";
+import { MetadataImportParams } from "../../domain/metadata/entities/MetadataSynchronizationParams";
 import { getClassName } from "../../domain/metadata/utils";
-import { SynchronizationResult } from "../../domain/synchronization/entities/SynchronizationResult";
+import { SynchronizationResult } from "../../domain/reports/entities/SynchronizationResult";
 import { cleanOrgUnitPaths } from "../../domain/synchronization/utils";
 import { TransformationRepository } from "../../domain/transformations/repositories/TransformationRepository";
 import { modelFactory } from "../../models/dhis/factory";
@@ -43,7 +43,7 @@ export class MetadataD2ApiRepository implements MetadataRepository {
     private instance: Instance;
 
     constructor(instance: DataSource, private transformationRepository: TransformationRepository) {
-        if (instance.type !== "dhis") {
+        if (!isDhisInstance(instance)) {
             throw new Error("Invalid instance type for MetadataD2ApiRepository");
         }
 
@@ -65,26 +65,38 @@ export class MetadataD2ApiRepository implements MetadataRepository {
         const requestFields = typeof fields === "object" ? getFieldsAsString(fields) : fields;
         const d2Metadata = await this.getMetadata<D2Model>(ids, requestFields, includeDefaults);
 
-        const metadataPackage = this.transformationRepository.mapPackageFrom(
-            apiVersion,
-            d2Metadata,
-            metadataTransformations
-        );
+        if (apiVersion >= 32 && d2Metadata["dashboards"] && fields === undefined) {
+            //Fix dashboard bug from 2.32
+            //It's necessary request again dashboards retrieving viualizations with type to transforms
+            //type is necessary to transform from visualizations to chart and report table
+            const fixedD2Metadata = await this.getMetadata<D2Model>(
+                ids,
+                ":all,dashboardItems[:all,visualization[id,type]]",
+                includeDefaults
+            );
 
-        return metadataPackage as T;
+            const metadataPackage = this.transformationRepository.mapPackageFrom(
+                apiVersion,
+                fixedD2Metadata,
+                metadataTransformations
+            );
+
+            return metadataPackage as T;
+        } else {
+            const metadataPackage = this.transformationRepository.mapPackageFrom(
+                apiVersion,
+                d2Metadata,
+                metadataTransformations
+            );
+
+            return metadataPackage as T;
+        }
     }
 
     @cache()
     public async listMetadata(listParams: ListMetadataParams): Promise<ListMetadataResponse> {
-        const {
-            type,
-            fields = { $owner: true },
-            page,
-            pageSize,
-            order,
-            rootJunction,
-            ...params
-        } = listParams;
+        const { type, fields = { $owner: true }, page, pageSize, order, rootJunction, ...params } = listParams;
+
         const filter = this.buildListFilters(params);
         const { apiVersion } = this.instance;
         const options = { type, fields, filter, order, page, pageSize, rootJunction };
@@ -148,7 +160,7 @@ export class MetadataD2ApiRepository implements MetadataRepository {
     public async getDefaultIds(filter?: string): Promise<string[]> {
         const response = (await this.api
             .get("/metadata", {
-                filter: "code:eq:default",
+                filter: "identifiable:eq:default",
                 fields: "id",
             })
             .getData()) as {
@@ -232,16 +244,11 @@ export class MetadataD2ApiRepository implements MetadataRepository {
         }
     }
 
-    private async getListAll({
-        type,
-        fields,
-        filter,
-        order = defaultOrder,
-        rootJunction,
-    }: GetListAllOptions) {
+    private async getListAll({ type, fields, filter, order = defaultOrder, rootJunction }: GetListAllOptions) {
         const list = await this.getListGeneric({ type, fields, filter, order, rootJunction });
 
         if (list.useSingleApiRequest) {
+            //@ts-ignore Type instantation is too deep
             const { objects } = await this.getApiModel(type)
                 .get({ paging: false, fields, filter, order: list.order })
                 .getData();
@@ -283,23 +290,45 @@ export class MetadataD2ApiRepository implements MetadataRepository {
         lastUpdated,
         group,
         level,
+        program,
+        optionSet,
+        category,
         includeParents,
         parents,
         showOnlySelected,
         selectedIds = [],
         filterRows,
         search,
+        disableFilterRows = false,
+        programType,
+        domainType,
+        childrenPropInList,
     }: Partial<ListMetadataParams>) {
         const filter: Dictionary<FilterValueBase> = {};
 
         if (lastUpdated) filter["lastUpdated"] = { ge: moment(lastUpdated).format("YYYY-MM-DD") };
         if (group) filter[`${group.type}.id`] = { eq: group.value };
         if (level) filter["level"] = { eq: level };
+        if (program) filter["program.id"] = { eq: program };
+        if (childrenPropInList) filter[childrenPropInList.prop] = { in: childrenPropInList.values };
+
+        if (programType) {
+            filter["programType"] = { eq: programType };
+        }
+
+        if (domainType) {
+            filter["domainType"] = { eq: domainType };
+        }
+
+        if (optionSet) filter["optionSet.id"] = { eq: optionSet };
+        if (category) filter["categories.id"] = { eq: category };
         if (includeParents && isNotEmpty(parents)) {
             filter["parent.id"] = { in: cleanOrgUnitPaths(parents) };
         }
         if (showOnlySelected) filter["id"] = { in: selectedIds.concat(filter["id"]?.in ?? []) };
-        if (filterRows) filter["id"] = { in: filterRows.concat(filter["id"]?.in ?? []) };
+        if (!disableFilterRows && filterRows) {
+            filter["id"] = { in: filterRows.concat(filter["id"]?.in ?? []) };
+        }
         if (search) filter[search.field] = { [search.operator]: search.value };
 
         return filter;
@@ -320,12 +349,22 @@ export class MetadataD2ApiRepository implements MetadataRepository {
 
         try {
             const response = await this.postMetadata(versionedPayloadPackage, additionalParams);
+
+            if (!response) {
+                return {
+                    status: "ERROR",
+                    instance: this.instance.toPublicObject(),
+                    date: new Date(),
+                    type: "metadata",
+                };
+            }
+
             return this.cleanMetadataImportResponse(response, "metadata");
-        } catch (error) {
+        } catch (error: any) {
             if (error?.response?.data) {
                 try {
                     return this.cleanMetadataImportResponse(error.response.data, "metadata");
-                } catch (error) {
+                } catch (error: any) {
                     return {
                         status: "NETWORK ERROR",
                         instance: this.instance.toPublicObject(),
@@ -354,8 +393,17 @@ export class MetadataD2ApiRepository implements MetadataRepository {
                 importStrategy: "DELETE",
             });
 
+            if (!response) {
+                return {
+                    status: "ERROR",
+                    instance: this.instance.toPublicObject(),
+                    date: new Date(),
+                    type: "deleted",
+                };
+            }
+
             return this.cleanMetadataImportResponse(response, "deleted");
-        } catch (error) {
+        } catch (error: any) {
             if (error?.response?.data) {
                 return this.cleanMetadataImportResponse(error.response.data, "deleted");
             }
@@ -418,7 +466,7 @@ export class MetadataD2ApiRepository implements MetadataRepository {
     }
 
     private getFiltersForDateFilter(field: string, dateFilter: DateFilter): string[] {
-        const [startDate, endDate] = buildPeriodFromParams(dateFilter);
+        const { startDate, endDate } = buildPeriodFromParams(dateFilter);
         const dayFormat = "YYYY-MM-DD";
 
         return [
@@ -461,21 +509,26 @@ export class MetadataD2ApiRepository implements MetadataRepository {
 
     private async postMetadata(
         payload: Partial<Record<string, unknown[]>>,
-        additionalParams?: MetadataImportParams
-    ): Promise<MetadataResponse> {
-        const response = await this.api.metadata
-            .post(payload, {
-                importMode: "COMMIT",
-                identifier: "UID",
-                importReportMode: "FULL",
-                importStrategy: "CREATE_AND_UPDATE",
-                mergeMode: "MERGE",
-                atomicMode: "ALL",
-                ...additionalParams,
+        params: MetadataImportParams = {}
+    ): Promise<MetadataResponse | null> {
+        const { response } = await this.api.metadata
+            .postAsync(payload, {
+                atomicMode: params.atomicMode ?? "ALL",
+                identifier: params.identifier ?? "UID",
+                importMode: params.importMode ?? "COMMIT",
+                importStrategy: params.importStrategy ?? "CREATE_AND_UPDATE",
+                importReportMode: params.importReportMode ?? "FULL",
+                mergeMode: params.mergeMode ?? "MERGE",
+                flushMode: params.flushMode,
+                preheatMode: params.preheatMode,
+                skipSharing: params.skipSharing,
+                skipValidation: params.skipValidation,
+                userOverrideMode: params.userOverrideMode,
             })
             .getData();
 
-        return response;
+        const result = await this.api.system.waitFor(response.jobType, response.id).getData();
+        return result;
     }
 
     private async getMetadata<T>(
@@ -484,8 +537,10 @@ export class MetadataD2ApiRepository implements MetadataRepository {
         includeDefaults: boolean
     ): Promise<Record<string, T[]>> {
         const promises = [];
-        for (let i = 0; i < elements.length; i += 100) {
-            const requestElements = elements.slice(i, i + 100).toString();
+        const chunkSize = 50;
+
+        for (let i = 0; i < elements.length; i += chunkSize) {
+            const requestElements = elements.slice(i, i + chunkSize).toString();
             promises.push(
                 this.api
                     .get("/metadata", {
@@ -533,10 +588,7 @@ type GetListGenericResponse =
     | { useSingleApiRequest: false; objects: unknown[] }
     | { useSingleApiRequest: true; order: string };
 
-function getIdFilter(
-    filter: GetListAllOptions["filter"],
-    maxIds: number
-): { inIds: string[]; value: object } | null {
+function getIdFilter(filter: GetListAllOptions["filter"], maxIds: number): { inIds: string[]; value: object } | null {
     const filterIdOrList = filter?.id;
     if (!filterIdOrList) return null;
 

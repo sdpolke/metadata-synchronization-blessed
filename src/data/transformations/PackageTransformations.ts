@@ -1,7 +1,6 @@
-import { D2DashboardItem as D2DashboardItem33 } from "d2-api/2.33";
+import { D2DashboardItem as D2DashboardItem33 } from "@eyeseetea/d2-api/2.33";
 import _ from "lodash";
 import { Transformation } from "../../domain/transformations/entities/Transformation";
-import { debug } from "../../utils/debug";
 import { isKeyOf, Mapping } from "./__tests__/integration/helpers";
 
 export const metadataTransformations: Transformation[] = [
@@ -10,46 +9,50 @@ export const metadataTransformations: Transformation[] = [
         apiVersion: 32,
         apply: ({ organisationUnits, ...rest }: any) => {
             return {
-                organisationUnits: organisationUnits?.map(
-                    ({ featureType, coordinates, geometry, ...rest }: any) => {
-                        if (featureType && featureType !== "NONE" && coordinates) {
-                            try {
-                                geometry = {
-                                    type: _.startCase(featureType.toLowerCase()),
-                                    coordinates: JSON.parse(coordinates),
-                                };
-                            } catch (error) {
-                                console.log(
-                                    "Error during coordinates conversion OU: " + rest["id"]
-                                );
-                            }
+                organisationUnits: organisationUnits?.map(({ featureType, coordinates, geometry, ...rest }: any) => {
+                    if (featureType && featureType !== "NONE" && coordinates) {
+                        try {
+                            return _.pickBy(
+                                {
+                                    geometry: {
+                                        type: _.startCase(featureType.toLowerCase()).replace(" ", ""),
+                                        coordinates: JSON.parse(coordinates),
+                                    },
+                                    ...rest,
+                                },
+                                _.identity
+                            );
+                        } catch (error: any) {
+                            console.error("Error during coordinates conversion OU: " + rest["id"]);
                         }
-                        return _.pickBy({ geometry, ...rest }, _.identity);
                     }
-                ),
+                    return _.pickBy({ geometry, ...rest }, _.identity);
+                }),
                 ...rest,
             };
         },
         undo: ({ organisationUnits, ...rest }: any) => {
             return {
-                organisationUnits: organisationUnits?.map(
-                    ({ geometry, featureType, coordinates, ...rest }: any) => {
-                        if (geometry && geometry.type && geometry.coordinates) {
-                            try {
-                                featureType = geometry.type.toUpperCase();
-                                coordinates = JSON.stringify(geometry.coordinates).replace(
-                                    /"/g,
-                                    ""
-                                );
-                            } catch (error) {
-                                console.log(
-                                    "Error during coordinates conversion OU: " + rest["id"]
-                                );
-                            }
+                organisationUnits: organisationUnits?.map(({ geometry, featureType, coordinates, ...rest }: any) => {
+                    if (geometry && geometry.type && geometry.coordinates) {
+                        try {
+                            return _.pickBy(
+                                {
+                                    featureType:
+                                        geometry.type === "MultiPolygon"
+                                            ? "MULTI_POLYGON"
+                                            : geometry.type.toUpperCase(),
+                                    coordinates: JSON.stringify(geometry.coordinates).replace(/"/g, ""),
+                                    ...rest,
+                                },
+                                _.identity
+                            );
+                        } catch (error: any) {
+                            console.error("Error during coordinates conversion OU: " + rest["id"]);
                         }
-                        return _.pickBy({ featureType, coordinates, ...rest }, _.identity);
                     }
-                ),
+                    return _.pickBy({ featureType, coordinates, ...rest }, _.identity);
+                }),
                 ...rest,
             };
         },
@@ -59,25 +62,22 @@ export const metadataTransformations: Transformation[] = [
         apiVersion: 31,
         apply: ({ programStages, ...rest }: any) => {
             return {
-                programStages: programStages?.map(
-                    ({ validCompleteOnly, validationStrategy, ...rest }: any) => {
-                        validationStrategy =
-                            typeof validationStrategy === "undefined"
-                                ? validCompleteOnly
-                                    ? "ON_COMPLETE"
-                                    : "ON_COMPLETE"
-                                : validationStrategy;
-                        return { validationStrategy, ...rest };
-                    }
-                ),
+                programStages: programStages?.map(({ validCompleteOnly, validationStrategy, ...rest }: any) => {
+                    validationStrategy =
+                        typeof validationStrategy === "undefined"
+                            ? validCompleteOnly
+                                ? "ON_COMPLETE"
+                                : "ON_COMPLETE"
+                            : validationStrategy;
+                    return { validationStrategy, ...rest };
+                }),
                 ...rest,
             };
         },
         undo: ({ programStages, ...rest }: any) => {
             return {
                 programStages: programStages?.map(({ validationStrategy, ...rest }: any) => {
-                    const validCompleteOnly =
-                        validationStrategy === "ON_UPDATE_AND_INSERT" ? false : true;
+                    const validCompleteOnly = validationStrategy === "ON_UPDATE_AND_INSERT" ? false : true;
                     return { validCompleteOnly, validationStrategy, ...rest };
                 }),
                 ...rest,
@@ -174,22 +174,15 @@ export const metadataTransformations: Transformation[] = [
                             ...dashboard,
                             dashboardItems: dashboardItems?.map((dashboardItem: any) => {
                                 const { type } = dashboardItem as { type: string };
-                                if (type !== "VISUALIZATION" || !dashboardItem.visualization)
+                                if (
+                                    type !== "VISUALIZATION" ||
+                                    !dashboardItem.visualization ||
+                                    !isKeyOf(visualizationTypeMapping, dashboardItem.visualization.type)
+                                ) {
                                     return dashboardItem;
-                                if (!visualizations) {
-                                    debug("No visualization found");
-                                    return null;
                                 }
 
-                                const visualization = visualizations.find(
-                                    (v: { id: string }) => v.id === dashboardItem.visualization.id
-                                ) as { type: string } | undefined;
-                                if (
-                                    !visualization ||
-                                    !isKeyOf(visualizationTypeMapping, visualization.type)
-                                )
-                                    return dashboardItem;
-                                const modelInfo = visualizationTypeMapping[visualization.type];
+                                const modelInfo = visualizationTypeMapping[dashboardItem.visualization.type];
 
                                 return {
                                     ..._.omit(dashboardItem, ["visualization"]),
@@ -259,50 +252,60 @@ export const metadataTransformations: Transformation[] = [
                 };
             });
 
+            const newVisualizations = _.compact(_.concat(newCharts, newReportTables));
+
             return {
                 ...rest,
-                visualizations: _.compact(_.concat(newCharts, newReportTables)),
+                visualizations: newVisualizations.length > 0 ? newVisualizations : undefined,
             };
         },
         undo: ({ visualizations, ...rest }: any) => {
-            const [charts, reportTables] = _(visualizations)
-                .partition(
-                    (visualization: { type: string }) =>
-                        isKeyOf(visualizationTypeMapping, visualization.type) &&
-                        visualizationTypeMapping[visualization.type].type !== "REPORT_TABLE"
-                )
-                .value();
+            if (visualizations) {
+                const [charts, reportTables] = _(visualizations)
+                    .partition(
+                        (visualization: { type: string }) =>
+                            isKeyOf(visualizationTypeMapping, visualization.type) &&
+                            visualizationTypeMapping[visualization.type].type !== "REPORT_TABLE" //PIVOT_TABLE?
+                    )
+                    .value();
 
-            const newCharts = charts.map((chart: any) => {
-                return {
-                    series: (chart.columnDimensions || [])[0],
-                    category: (chart.rowDimensions || [])[0],
-                    seriesItems: (chart.optionalAxes || []).map(
-                        ({ dimensionalItem, axis }: any) => ({
+                const newCharts = charts.map((chart: any) => {
+                    return {
+                        series: (chart.columnDimensions || [])[0],
+                        category: (chart.rowDimensions || [])[0],
+                        seriesItems: (chart.optionalAxes || []).map(({ dimensionalItem, axis }: any) => ({
                             series: dimensionalItem,
                             axis,
-                        })
-                    ),
-                    ...chart,
-                };
-            });
+                        })),
+                        ...chart,
+                    };
+                });
 
-            const newReportTables = reportTables.map((reportTable: any) => {
+                const newReportTables = reportTables.map((reportTable: any) => {
+                    return {
+                        ...reportTable,
+                        ...getPeriodDataFromYearlySeries(reportTable),
+                        cumulativeValues: undefined,
+                        cumulative: reportTable.cumulativeValues,
+                        reportingParams: undefined,
+                        reportParams: getOldReportParams(reportTable.reportingParams),
+                    };
+                });
+
                 return {
-                    ...reportTable,
-                    ...getPeriodDataFromYearlySeries(reportTable),
-                    cumulativeValues: undefined,
-                    cumulative: reportTable.cumulativeValues,
-                    reportingParams: undefined,
-                    reportParams: getOldReportParams(reportTable.reportingParams),
+                    ...rest,
+                    charts: newCharts,
+                    reportTables: newReportTables,
                 };
-            });
-
-            return {
-                ...rest,
-                charts: newCharts,
-                reportTables: newReportTables,
-            };
+            } else {
+                // This is neccesary because in 2.34 charts and reports tables may appears in the package
+                // as charts, reportTables keys if the response is for the request against charts, reportTables endpoints
+                // if response is for the request agains visualizations or metadata then the key is visualizations
+                // if visualizations key does not exist then return rest directly
+                return {
+                    ...rest,
+                };
+            }
         },
     },
     {
@@ -377,6 +380,29 @@ export const metadataTransformations: Transformation[] = [
             };
         },
     },
+    {
+        name: "fix mapViews duplicate error",
+        apiVersion: 34,
+        apply: ({ maps, mapViews, ...rest }: any) => {
+            if (maps && mapViews) {
+                const newMapViews = mapViews.filter((mapView: any) => {
+                    const existsInSomeMap = maps.some((map: any) =>
+                        map.mapViews.some((mapViewInMap: any) => mapViewInMap.id === mapView.id)
+                    );
+
+                    return !existsInSomeMap;
+                });
+
+                return {
+                    ...rest,
+                    maps,
+                    mapViews: newMapViews.length > 0 ? newMapViews : undefined,
+                };
+            } else {
+                return { ...rest };
+            }
+        },
+    },
 ];
 
 const itemsMapping = {
@@ -387,24 +413,22 @@ const itemsMapping = {
 const chart = { type: "CHART", property: "chart" } as const;
 const reportTable = { type: "REPORT_TABLE", property: "reportTable" } as const;
 
-const visualizationTypeMapping: Record<
-    string,
-    { type: D2DashboardItem33["type"]; property: keyof D2DashboardItem33 }
-> = {
-    COLUMN: chart,
-    STACKED_COLUMN: chart,
-    BAR: chart,
-    STACKED_BAR: chart,
-    LINE: chart,
-    AREA: chart,
-    PIE: chart,
-    RADAR: chart,
-    GAUGE: chart,
-    YEAR_OVER_YEAR_LINE: chart,
-    YEAR_OVER_YEAR_COLUMN: chart,
-    SINGLE_VALUE: chart,
-    PIVOT_TABLE: reportTable,
-};
+const visualizationTypeMapping: Record<string, { type: D2DashboardItem33["type"]; property: keyof D2DashboardItem33 }> =
+    {
+        COLUMN: chart,
+        STACKED_COLUMN: chart,
+        BAR: chart,
+        STACKED_BAR: chart,
+        LINE: chart,
+        AREA: chart,
+        PIE: chart,
+        RADAR: chart,
+        GAUGE: chart,
+        YEAR_OVER_YEAR_LINE: chart,
+        YEAR_OVER_YEAR_COLUMN: chart,
+        SINGLE_VALUE: chart,
+        PIVOT_TABLE: reportTable,
+    };
 
 function getNewReportParams(reportParams: any) {
     const {

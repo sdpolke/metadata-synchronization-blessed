@@ -1,33 +1,18 @@
+import { Either } from "../../common/entities/Either";
 import { UseCase } from "../../common/entities/UseCase";
 import { RepositoryFactory } from "../../common/factories/RepositoryFactory";
-import { Repositories } from "../../Repositories";
-import { Namespace } from "../../storage/Namespaces";
-import { StorageRepositoryConstructor } from "../../storage/repositories/StorageRepository";
-import { Instance, InstanceData } from "../entities/Instance";
-import { Either } from "../../common/entities/Either";
+import { Instance } from "../entities/Instance";
 
 export class GetInstanceByIdUseCase implements UseCase {
-    constructor(
-        private repositoryFactory: RepositoryFactory,
-        private localInstance: Instance,
-        private encryptionKey: string
-    ) {}
+    constructor(private repositoryFactory: RepositoryFactory, private localInstance: Instance) {}
 
     public async execute(id: string): Promise<Either<"NOT_FOUND", Instance>> {
-        if (id === "LOCAL") return Either.success(this.localInstance);
+        const instanceRepository = this.repositoryFactory.instanceRepository(this.localInstance);
 
-        const storageRepository = this.repositoryFactory.get<StorageRepositoryConstructor>(
-            Repositories.StorageRepository,
-            [this.localInstance]
-        );
+        const instance = await instanceRepository.getById(id);
 
-        const data = await storageRepository.getObjectInCollection<InstanceData>(
-            Namespace.INSTANCES,
-            id
-        );
+        if (!instance) return Either.error("NOT_FOUND");
 
-        if (!data) return Either.error("NOT_FOUND");
-
-        return Either.success(Instance.build(data).decryptPassword(this.encryptionKey));
+        return Either.success(instance);
     }
 }

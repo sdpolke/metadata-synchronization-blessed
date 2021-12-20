@@ -1,26 +1,25 @@
 import { useConfig } from "@dhis2/app-runtime";
 //@ts-ignore
-import { HeaderBar } from "@dhis2/ui-widgets";
+import { HeaderBar } from "@dhis2/ui";
+import { LoadingProvider, SnackbarProvider } from "@eyeseetea/d2-ui-components";
 import { MuiThemeProvider } from "@material-ui/core/styles";
 import { createGenerateClassName, StylesProvider } from "@material-ui/styles";
 import { init } from "d2";
-import { LoadingProvider, SnackbarProvider } from "d2-ui-components";
 import _ from "lodash";
 //@ts-ignore
 import OldMuiThemeProvider from "material-ui/styles/MuiThemeProvider";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Instance } from "../../domain/instance/entities/Instance";
-import { MigrationsRunner } from "../../migrations";
 import { D2Api } from "../../types/d2-api";
-import { debug } from "../../utils/debug";
 import { initializeAppRoles } from "../../utils/permissions";
-import { AppContext } from "../react/contexts/AppContext";
-import muiThemeLegacy from "../react/themes/dhis2-legacy.theme";
-import { muiTheme } from "../react/themes/dhis2.theme";
 import { CompositionRoot } from "../CompositionRoot";
-import Migrations from "../react/components/migrations/Migrations";
-import Share from "../react/components/share/Share";
-import Root from "./pages/Root";
+import { useMigrations } from "../react/core/components/migrations/hooks";
+import Migrations from "../react/core/components/migrations/Migrations";
+import Share from "../react/core/components/share/Share";
+import { AppContext, AppContextState } from "../react/core/contexts/AppContext";
+import muiThemeLegacy from "../react/core/themes/dhis2-legacy.theme";
+import { muiTheme } from "../react/core/themes/dhis2.theme";
+import Root from "./Root";
 import "./WebApp.css";
 
 const generateClassName = createGenerateClassName({
@@ -51,11 +50,7 @@ interface AppConfig {
 
 interface AppWindow extends Window {
     $: {
-        feedbackDhis2: (
-            d2: unknown,
-            appKey: string,
-            appConfig: AppConfig["feedback"]["feedbackOptions"]
-        ) => void;
+        feedbackDhis2: (d2: unknown, appKey: string, appConfig: AppConfig["feedback"]["feedbackOptions"]) => void;
     };
 }
 
@@ -66,24 +61,15 @@ function initFeedbackTool(d2: unknown, appConfig: AppConfig): void {
             ...appConfig.feedback,
             i18nPath: "feedback-tool/i18n",
         };
-        ((window as unknown) as AppWindow).$.feedbackDhis2(d2, appKey, feedbackOptions);
+        (window as unknown as AppWindow).$.feedbackDhis2(d2, appKey, feedbackOptions);
     }
 }
 
-type MigrationState =
-    | {
-          type: "checking" | "checked";
-      }
-    | {
-          type: "pending";
-          runner: MigrationsRunner;
-      };
-
 const App = () => {
     const { baseUrl } = useConfig();
-    const [appContext, setAppContext] = useState<AppContext | null>(null);
-    const [migrationsState, setMigrationsState] = useState<MigrationState>({ type: "checking" });
+    const [appContext, setAppContext] = useState<AppContextState | null>(null);
     const [showShareButton, setShowShareButton] = useState(false);
+    const migrations = useMigrations(appContext);
 
     const appTitle = process.env.REACT_APP_PRESENTATION_TITLE;
 
@@ -99,9 +85,15 @@ const App = () => {
             const d2 = await init({ baseUrl: `${baseUrl}/api` });
             const api = new D2Api({ baseUrl, backend: "fetch" });
             const version = await api.getVersion();
-            const instance = Instance.build({ name: "This instance", url: baseUrl, version });
+            const instance = Instance.build({
+                type: "local",
+                name: "This instance",
+                url: baseUrl,
+                version,
+            });
 
             const compositionRoot = new CompositionRoot(instance, encryptionKey);
+            await compositionRoot.app.initialize();
 
             setAppContext({ d2: d2 as object, api, compositionRoot });
 
@@ -110,20 +102,20 @@ const App = () => {
             initFeedbackTool(d2, appConfig);
 
             await initializeAppRoles(baseUrl);
-            runMigrations(api).then(setMigrationsState);
         };
 
         run();
     }, [baseUrl]);
 
-    if (migrationsState.type === "pending") {
+    if (migrations.state.type === "pending") {
         return (
-            <Migrations
-                runner={migrationsState.runner}
-                onFinish={() => setMigrationsState({ type: "checked" })}
-            />
+            <AppContext.Provider value={appContext}>
+                <Migrations migrations={migrations} />
+            </AppContext.Provider>
         );
-    } else if (migrationsState.type === "checked") {
+    }
+
+    if (migrations.state.type === "checked") {
         return (
             <StylesProvider generateClassName={generateClassName}>
                 <MuiThemeProvider theme={muiTheme}>
@@ -145,17 +137,9 @@ const App = () => {
                 </MuiThemeProvider>
             </StylesProvider>
         );
-    } else return null;
-};
-
-async function runMigrations(api: D2Api): Promise<MigrationState> {
-    const runner = await MigrationsRunner.init({ api, debug: debug });
-
-    if (runner.hasPendingMigrations()) {
-        return { type: "pending", runner };
-    } else {
-        return { type: "checked" };
     }
-}
+
+    return null;
+};
 
 export default App;
